@@ -96,7 +96,7 @@ def main():
         sys.exit("Got expired daily question, please retry later.")
 
     title, title_slug, difficulty, acRate, topics = parse_daily_question(data)
-    description = f'{difficulty} task "{title}" with acRate {acRate:.2f}'
+    description = f'{difficulty} task "{title}" with acRate {acRate:.2f}%'
 
     if is_daily_question_solved(data, today, title_slug):
         print(f"{description} is solved!")
@@ -104,9 +104,9 @@ def main():
         sys.exit(0)
 
     print(f"{description} is not yet solved.")
-    if acRate > 0.6:
+    if acRate > 60:
         print("Should be a piece of cake!")
-    elif acRate > 0.4:
+    elif acRate > 40:
         print("Time to think about it!")
     else:
         print("Brace yourself, {username}!")
