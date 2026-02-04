@@ -5,6 +5,7 @@
 # "gql",
 # "aiohttp",
 # ]
+# requires-python = ">=3.11"
 # ///
 #
 # Checks whether a specified user has solved today's daily task.
@@ -12,9 +13,16 @@
 
 import sys
 from datetime import datetime, timezone
+from enum import StrEnum
 
 from gql import Client, gql
 from gql.transport.aiohttp import AIOHTTPTransport
+
+
+class Difficulty(StrEnum):
+    Easy = "Easy"
+    Medium = "Medium"
+    Hard = "Hard"
 
 
 def query_graphql(username: str):
@@ -74,7 +82,7 @@ def parse_daily_question(data):
     daily_question = data["activeDailyCodingChallengeQuestion"]["question"]
     title = daily_question["title"]
     title_slug = daily_question["titleSlug"]
-    difficulty = daily_question["difficulty"]
+    difficulty = Difficulty(daily_question["difficulty"])
     acRate = float(daily_question["acRate"])
     topics = [topic["name"] for topic in daily_question["topicTags"]]
     return title, title_slug, difficulty, acRate, topics
@@ -95,7 +103,10 @@ def main():
     if not is_daily_question_for_today(data, today):
         sys.exit("Got expired daily question, please retry later.")
 
-    title, title_slug, difficulty, acRate, topics = parse_daily_question(data)
+    try:
+        title, title_slug, difficulty, acRate, topics = parse_daily_question(data)
+    except Exception as e:
+        sys.exit(f"Failed to parse daily question: {e}")
     description = f'{difficulty} task "{title}" with acRate {acRate:.2f}%'
 
     if is_daily_question_solved(data, today, title_slug):
@@ -104,12 +115,13 @@ def main():
         sys.exit(0)
 
     print(f"{description} is not yet solved.")
-    if acRate > 60:
+    if difficulty == Difficulty.Easy or acRate > 60:
         print("Should be a piece of cake!")
-    elif acRate > 40:
-        print("Time to think about it!")
+    elif difficulty == Difficulty.Hard or acRate < 40:
+        print(f"Brace yourself, {username}!")
     else:
-        print("Brace yourself, {username}!")
+        print("Time to think about it!")
+
     print()
     print(f"Link: https://leetcode.com/problems/{title_slug}")
     print(f"Topics: {', '.join(topics)}")
